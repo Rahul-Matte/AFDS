@@ -118,7 +118,7 @@ def predict_price(price, days, total_shelf_life=10):
 
 from datetime import datetime, timedelta
 
-def store_analysis(price, qty, cost, mandis, crop, days_since_harvest=0):
+def store_analysis(price, qty, cost, mandis, crop, days_since_harvest=0, transport_rate=0.5, storage_rate=0.01):
     """
     Analyzes profit if crop is stored.
     Finds the optimal number of days to store within the remaining shelf life.
@@ -161,12 +161,11 @@ def store_analysis(price, qty, cost, mandis, crop, days_since_harvest=0):
                 "markets": future_markets
             }
         
-        # Dynamic Storage Cost: 1% of current value per day (scales with price)
-        # 0.01 * price * qty * days
-        storage_cost = 0.01 * base_price * qty * d
+        # Dynamic Storage Cost: storage_rate of current value per day (scales with price)
+        storage_cost = storage_rate * base_price * qty * d
         
         # Find best mandi at future price
-        mandi_deal = best_mandi_profit(mandis, future_price_data, qty, cost)
+        mandi_deal = best_mandi_profit(mandis, future_price_data, qty, cost, transport_rate=transport_rate)
         
         if mandi_deal:
             # Net profit after storage

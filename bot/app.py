@@ -241,9 +241,20 @@ elif st.session_state.page == 'results':
                 st.error("Could not detect location. Please enter manually.")
                 st.stop()
 
+    # =================== TRANSPORT & STORAGE RATE WIDGETS ===================
+    # These widgets control the rates used for ALL profit calculations.
+    with st.expander("⚙️ Adjust Cost Parameters (Transport & Storage)", expanded=False):
+        param_col1, param_col2 = st.columns(2)
+        with param_col1:
+            trans_cost_per_km = st.number_input("🚚 Transport Cost (₹/km)", min_value=0.0, value=2.0, step=0.5, format="%.2f")
+        with param_col2:
+            storage_rate_pct = st.number_input("❄️ Storage Rate (% per day)", min_value=0.0, max_value=10.0, value=1.0, step=0.1)
+
+    storage_rate_val = storage_rate_pct / 100.0
+
     # ================== CACHE EXPENSIVE API CALLS ==================
     # Build a cache key from inputs. If inputs change (new Analyze click), cache is invalidated.
-    cache_key = f"{crop}_{state}_{qty}_{cost}_{days}_{location}"
+    cache_key = f"{crop}_{state}_{qty}_{cost}_{days}_{location}_{trans_cost_per_km}_{storage_rate_val}"
     
     if st.session_state.get('analysis_cache_key') != cache_key:
         # Clear old cache so it re-fetches
@@ -321,14 +332,17 @@ elif st.session_state.page == 'results':
                 st.warning(f"No mandis found within {state} for the given location.")
 
             if mandis:
-                best = best_mandi_profit(mandis, price_data, qty, cost)
+                best = best_mandi_profit(mandis, price_data, qty, cost, transport_rate=trans_cost_per_km)
                 weather = get_weather_condition(best["mandi"]) if best else "Unknown"
             else:
                 best = None
                 weather = "Unknown"
 
             # Check Cold Storage option
-            rec_days, rec_date, future_price, stored_profit, best_stored, profit_roadmap = store_analysis(price_data, qty, cost, mandis, crop, days)
+            rec_days, rec_date, future_price, stored_profit, best_stored, profit_roadmap = store_analysis(
+                price_data, qty, cost, mandis, crop, days,
+                transport_rate=trans_cost_per_km, storage_rate=storage_rate_val
+            )
             
             should_store, profit_inc = compare_profits(best["profit"] if best else 0, stored_profit)
             decision = "STORE" if should_store else "SELL"
@@ -412,15 +426,6 @@ elif st.session_state.page == 'results':
         st.divider()
         st.header(f"🚀 Market Strategy (100km Radius)")
         
-        # Strategy Inputs
-        strat_col1, strat_col2 = st.columns(2)
-        with strat_col1:
-            # User defined transport cost
-            trans_cost_per_km = st.number_input("🚚 Transport Cost (₹/km)", min_value=0.0, value=2.0, step=0.5, format="%.2f")
-        
-        with strat_col2:
-            st.write("") # Spacer
-
         # 1. Use the coordinates we resolved earlier (target_lat/lon)
         strat_lat, strat_lon = target_lat, target_lon
             
