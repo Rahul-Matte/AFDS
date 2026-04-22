@@ -1,8 +1,8 @@
-def transport_cost(distance, qty, rate=0.5):
+def transport_cost(distance, rate=0.5):
     """
-    Calculates transport cost based on distance, quantity, and rate (default 0.5/km).
+    Calculates transport cost based on distance and rate (default 0.5/km).
     """
-    return int(distance * qty * rate)
+    return int(distance * rate)
 
 
 def calc_profit(price, qty, cost, distance, transport_rate=0.5):
@@ -10,7 +10,7 @@ def calc_profit(price, qty, cost, distance, transport_rate=0.5):
     Calculates net profit.
     Profit = (Price * Qty) - Cultivation Cost - Transport Cost
     """
-    transport = transport_cost(distance, qty, transport_rate)
+    transport = transport_cost(distance, transport_rate)
     total = price * qty
     profit = total - cost - transport
     return profit, transport
